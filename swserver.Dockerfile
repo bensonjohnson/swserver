@@ -12,7 +12,7 @@ RUN apt update && apt upgrade -y
 RUN apt install -y lib32gcc-s1 curl wget xvfb
 RUN wget -nc -O /usr/share/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key
 RUN wget -nc -P /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/ubuntu/dists/jammy/winehq-jammy.sources
-RUN apt update && apt install --install-recommends wine-stable mono-complete winetricks -y
+RUN apt update && apt install --install-recommends wine-stable mono-complete -y
 RUN adduser --disabled-password --home /home/steam steam
 RUN cd /home/steam && curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf -
 RUN chown -R steam:steam /home/steam/
