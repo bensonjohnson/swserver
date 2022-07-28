@@ -18,9 +18,9 @@ RUN cd /home/steam && curl -sqL "https://steamcdn-a.akamaihd.net/client/installe
 RUN chown -R steam:steam /home/steam/
 RUN chmod +x /home/steam/steamcmd.sh
 RUN chmod -R 777 /home/
-COPY entry.sh /home/
+COPY entry.sh /opt/
 
-ENTRYPOINT /home/entry.sh
+ENTRYPOINT /opt/entry.sh
 
 EXPOSE 25564/tcp
 EXPOSE 25565/tcp
