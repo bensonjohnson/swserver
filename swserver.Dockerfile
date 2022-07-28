@@ -20,6 +20,7 @@ RUN chmod -R 777 /opt/
 RUN chmod +x /home/steam/steamcmd.sh
 RUN chmod -R 777 /home/
 COPY entry.sh /opt/
+RUN chmod +x /opt/entry.sh
 
 ENTRYPOINT /opt/entry.sh
 
