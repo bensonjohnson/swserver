@@ -16,6 +16,7 @@ RUN apt update && apt install --install-recommends wine-stable mono-complete -y
 RUN adduser --disabled-password --home /home/steam steam
 RUN cd /home/steam && curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf -
 RUN chown -R steam:steam /home/steam/
+RUN chmod -R 777 /opt/
 RUN chmod +x /home/steam/steamcmd.sh
 RUN chmod -R 777 /home/
 COPY entry.sh /opt/
