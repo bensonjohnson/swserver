@@ -10,7 +10,7 @@ RUN apt install software-properties-common -y
 RUN dpkg --add-architecture i386
 RUN apt update && apt upgrade -y
 RUN apt install -y lib32gcc-s1 curl wget xvfb
-RUN wget -nc -O /usr/share/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key
+RUN wget -nc -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key
 RUN wget -nc -P /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/ubuntu/dists/jammy/winehq-jammy.sources
 RUN apt update && apt install --install-recommends wine-stable -y
 RUN adduser --disabled-password --home /home/steam steam
