@@ -25,5 +25,8 @@ RUN chmod +x /opt/entry.sh
 ENTRYPOINT /opt/entry.sh
 
 EXPOSE 25564/tcp
+EXPOSE 25564/udp
 EXPOSE 25565/tcp
+EXPOSE 25565/udp
 EXPOSE 25566/tcp
+EXPOSE 25566/udp
