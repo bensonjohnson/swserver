@@ -1,4 +1,4 @@
-FROM debian:stable
+FROM debian:bullseye
 WORKDIR /home/steam/sw
 RUN export DEBIAN_FRONTEND=noninteractive
 RUN apt update && apt upgrade -y
