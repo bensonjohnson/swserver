@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM debian:stable
 WORKDIR /home/steam/sw
 RUN export DEBIAN_FRONTEND=noninteractive
 RUN apt update && apt upgrade -y
