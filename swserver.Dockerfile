@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:22.04
 WORKDIR /home/steam/sw
 RUN export DEBIAN_FRONTEND=noninteractive
 RUN apt update && apt upgrade -y
