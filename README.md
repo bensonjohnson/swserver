@@ -1,5 +1,5 @@
 StormWorks Server in a Docker.
-https://hub.docker.com/r/bensonjohnson/swserver
+https://hub.docker.com/r/bensonjohnson/swserver\
 https://github.com/bensonjohnson/swserver
 
 Ports 25564, 25565, and 25566 needs to be exposed TCP/UDP
