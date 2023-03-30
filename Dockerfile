@@ -1,4 +1,6 @@
 FROM ubuntu:22.04
+
+##set up base
 WORKDIR /home/steam/sw
 RUN export DEBIAN_FRONTEND=noninteractive
 RUN apt update && apt upgrade -y
@@ -9,10 +11,16 @@ RUN apt-get update && \
 RUN apt install software-properties-common -y
 RUN dpkg --add-architecture i386
 RUN apt update && apt upgrade -y
+
+## install base dependencies for headless xorg
 RUN apt install -y lib32gcc-s1 curl wget xvfb apt-utils
+
+## add wine repo and install wine-staging
 RUN wget -nc -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key
 RUN wget -nc -P /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/ubuntu/dists/jammy/winehq-jammy.sources
 RUN apt update && apt install --no-install-recommends winehq-staging -y
+
+## add neceassary steam user and install steamcmd
 RUN adduser --disabled-password --home /home/steam steam
 RUN cd /home/steam && curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf -
 RUN chown -R steam:steam /home/steam/
