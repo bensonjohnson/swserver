@@ -7,4 +7,3 @@ Ports 25564, 25565, and 25566 need to be exposed TCP/UDP
 Persistant storage: \
 /root/.wine/drive_c/users/root/AppData/Roaming/Stormworks: ( Savedata + mods ) \
 /home/steam/sw: ( Game data )
-
