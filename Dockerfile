@@ -1,4 +1,4 @@
-FROM ubuntu:23.04
+FROM ubuntu:lunar
 
 ##set up base
 WORKDIR /home/steam/sw
