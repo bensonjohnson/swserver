@@ -1,4 +1,4 @@
-FROM ubuntu:lunar
+FROM ubuntu:mantic
 
 ##set up base
 WORKDIR /home/steam/sw
@@ -17,8 +17,8 @@ RUN apt install -y lib32gcc-s1 curl wget xvfb apt-utils
 
 ## add wine repo and install wine-staging
 RUN wget -nc -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key
-RUN wget -nc -P /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/ubuntu/dists/lunar/winehq-lunar.sources
-RUN apt update && apt install --no-install-recommends winehq-stable -y
+RUN wget -nc -P /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/ubuntu/dists/mantic/winehq-mantic.sources
+RUN apt update && apt install --no-install-recommends winehq-devel -y
 
 ## add neceassary steam user and install steamcmd
 RUN adduser --disabled-password --home /home/steam steam
