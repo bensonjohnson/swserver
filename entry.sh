@@ -6,7 +6,7 @@
 #cp /home/steam/steamworks_sdk/*64.dll /home/steam/sw
 
 
-rsync -a -vv /mnt/steam/sw/ /home/steam/sw/
+rsync -a -vv /mnt/steam/sw/stormworks-bin/ /home/steam/sw/
 winecfg
 xvfb-run wine /home/steam/sw/server64.exe
 
