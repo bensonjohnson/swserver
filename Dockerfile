@@ -13,24 +13,18 @@ RUN dpkg --add-architecture i386
 RUN apt update && apt upgrade -y
 
 ## install base dependencies for headless xorg
-RUN apt install -y lib32gcc-s1 curl wget xvfb apt-utils
+RUN apt install -y lib32gcc-s1 curl wget xvfb apt-utils rsync
 
 ## add wine repo and install wine-staging
-#RUN wget -nc -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key
-#RUN wget -nc -P /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/ubuntu/dists/mantic/winehq-mantic.sources
-RUN apt update && apt install --no-install-recommends wine-stable wine32 -y
+RUN wget -nc -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key
+RUN wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/ubuntu/dists/noble/winehq-noble.sources
+RUN apt update && apt install --install-recommends wine64 -y
 
-## add neceassary steam user and install steamcmd
-RUN adduser --disabled-password --home /home/steam steam
-RUN cd /home/steam && curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf -
-RUN chown -R steam:steam /home/steam/
-RUN chmod -R 755 /opt/
-RUN chmod +x /home/steam/steamcmd.sh
-RUN chmod -R 755 /home/
 COPY entry.sh /opt/
 RUN chmod +x /opt/entry.sh
 
 ENTRYPOINT /opt/entry.sh
+#ENTRYPOINT [ "bash" ]
 
 EXPOSE 25564/tcp
 EXPOSE 25564/udp

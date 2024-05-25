@@ -1,8 +1,12 @@
 #!/bin/bash
-chmod -R 775 /home/steam/
-/home/steam/steamcmd.sh +force_install_dir /home/steam/steamworks_sdk +login anonymous +@sSteamCmdForcePlatformType windows +app_update 1007 +quit
-/home/steam/steamcmd.sh @sSteamCmdForcePlatformType windows +force_install_dir /home/steam/sw +login anonymous +app_update 1247090 validate +quit
-cp /home/steam/steamworks_sdk/*64.dll /home/steam/sw
+#!!!OUTDATED as there is no longer a way to pull the files from steamcmd as anonymous. The ffiles must be rsynced from a local install to avoid having to deal with steamguard and steamcmd
+#chmod -R 775 /home/steam/
+#/home/steam/steamcmd.sh +force_install_dir /home/steam/steamworks_sdk +login anonymous +@sSteamCmdForcePlatformType windows +app_update 1007 +quit
+#/home/steam/steamcmd.sh @sSteamCmdForcePlatformType windows +force_install_dir /home/steam/sw +login anonymous +app_update 1247090 validate +quit
+#cp /home/steam/steamworks_sdk/*64.dll /home/steam/sw
+
+
+rsync -a -vv /mnt/steam/sw/ /home/steam/sw/
 winecfg
 xvfb-run wine /home/steam/sw/server64.exe
 
