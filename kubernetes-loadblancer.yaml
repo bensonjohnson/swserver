@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: swserver-loadbalancer
+  namespace: game-servers
+spec:
+  type: LoadBalancer
+  ports:
+    - name: tcp-25564
+      protocol: TCP
+      port: 25564
+      targetPort: 25564
+    - name: udp-25564
+      protocol: UDP
+      port: 25564
+      targetPort: 25564
+    - name: tcp-25565
+      protocol: TCP
+      port: 25565
+      targetPort: 25565
+    - name: udp-25565
+      protocol: UDP
+      port: 25565
+      targetPort: 25565
+    - name: tcp-25566
+      protocol: TCP
+      port: 25566
+      targetPort: 25566
+    - name: udp-25566
+      protocol: UDP
+      port: 25566
+      targetPort: 25566
+  selector:
+    app: swserver
