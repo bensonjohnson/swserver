@@ -13,7 +13,7 @@ RUN dpkg --add-architecture i386
 RUN apt update && apt upgrade -y
 
 ## install base dependencies for headless xorg
-RUN apt install -y lib32gcc-s1 curl wget xvfb apt-utils rsync
+RUN apt install -y lib32gcc-s1 curl wget xvfb apt-utils rsync nano
 
 ## add wine repo and install wine-staging
 RUN wget -nc -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key
