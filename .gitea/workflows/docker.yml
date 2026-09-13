@@ -73,19 +73,15 @@ jobs:
           curl -sLO "https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl"
           chmod +x kubectl && sudo mv kubectl /usr/local/bin/
 
-      - name: Deploy (render manifests to the commit SHA and apply)
-        # kubectl apply on k8s/ keeps the repo as the source of truth (probes,
-        # resources, env all reach the cluster, not just the image tag).
-        # The manifests carry :latest as a placeholder; substituting the built
-        # SHA gives a deterministic pin and a clean rollback target.
+      - name: Deploy
         if: gitea.event_name != 'pull_request'
         run: |
           echo "${{ secrets.KUBECONFIG }}" > kubeconfig
           export KUBECONFIG=kubeconfig
-          sed -i "s|sw-server:latest|sw-server:${{ gitea.sha }}|g" k8s/deployment.yaml
-          grep -q "sw-server:${{ gitea.sha }}" k8s/deployment.yaml \
-            || { echo "image placeholder substitution failed"; exit 1; }
           kubectl apply -f k8s/
+          # manifest is unchanged when only the image was rebuilt, so force a
+          # restart - with imagePullPolicy: Always the new pod pulls :latest
+          kubectl rollout restart deployment/swserver-deployment -n ${{ env.NAMESPACE }}
           kubectl rollout status deployment/swserver-deployment -n ${{ env.NAMESPACE }} --timeout=600s
 
       - name: Where to find it

@@ -32,7 +32,7 @@ spec:
       containers:
       - name: swserver
         image: gitea.gokickrocks.org/bensonjohnson/sw-server:latest
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         envFrom:
         - secretRef:
             name: steam-credentials
