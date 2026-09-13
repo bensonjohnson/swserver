@@ -34,7 +34,10 @@ STEAMDIR = os.path.join(HOME, "steamcmd")
 STEAMCMD = os.path.join(STEAMDIR, "steamcmd.sh")
 SW_DIR = os.path.join(HOME, "sw")
 SDK_DIR = os.path.join(HOME, "steamworks_sdk")
-WINEPREFIX = os.environ.get("WINEPREFIX", os.path.join(HOME, ".wine"))
+WINEPREFIX = os.environ.get("WINEPREFIX", os.path.join(HOME, "wine-data", "prefix"))
+SW_SETTINGS_DIR = os.path.join(
+    WINEPREFIX, "drive_c", "users", "steam", "AppData", "Roaming", "Stormworks")
+SERVER_CONFIG = os.path.join(SW_SETTINGS_DIR, "server_config.xml")
 LOG_PATH = os.path.join(HOME, "panel.log")
 STATE_PATH = os.path.join(HOME, "panel_state.json")
 QR_PATH = "/tmp/steam_auth_qr.png"
@@ -553,6 +556,44 @@ class Supervisor:
         env.setdefault("WINEDEBUG", "-all")
         return env
 
+    # ---- server config / world data -----------------------------------------
+
+    def get_config(self):
+        try:
+            with open(SERVER_CONFIG, "r", errors="replace") as f:
+                return f.read()
+        except OSError:
+            return ""
+
+    def save_config(self, content):
+        if "<server_data" not in content:
+            return "refusing to save: does not look like server_config.xml"
+        with self.lock:
+            was_running = bool(self.server)
+        self.stop_server()
+        os.makedirs(os.path.dirname(SERVER_CONFIG), exist_ok=True)
+        tmp = SERVER_CONFIG + ".tmp"
+        with open(tmp, "w") as f:
+            f.write(content)
+        os.replace(tmp, SERVER_CONFIG)
+        log("server_config.xml updated via panel")
+        self.start_server()
+        return None
+
+    def reset_world(self):
+        with self.lock:
+            was_running = bool(self.server)
+        self.stop_server()
+        try:
+            shutil.rmtree(SW_SETTINGS_DIR)
+            log("wiped saves, working_server and server_config.xml - "
+                "defaults regenerate on next start")
+        except OSError as e:
+            return str(e)
+        if was_running:
+            self.start_server()
+        return None
+
     # ---- status -------------------------------------------------------------
 
     def status(self):
@@ -630,6 +671,15 @@ PAGE = """<!doctype html>
  </div>
  <div class="card"><h2>Log</h2><button onclick="loadLog(true)">refresh</button><pre id="log"></pre></div>
 </div>
+<div class="cards" style="margin-top:1rem">
+ <div class="card" style="flex-basis:100%"><h2>Server config (server_config.xml)</h2>
+  <textarea id="cfg" style="width:100%;height:300px;background:#0e1114;color:#cde;border:1px solid #333;border-radius:6px;font-family:monospace;font-size:.75rem;padding:8px" spellcheck="false"></textarea><br>
+  <button onclick="loadCfg()">Reload from server</button>
+  <button onclick="saveCfg()">Save &amp; restart server</button>
+  <button style="background:#8b2222" onclick="wipeWorld()">Wipe world &amp; config (regenerate)</button>
+  <span class="muted">Wiping deletes saves + working_server + config; the server recreates defaults on next start.</span>
+ </div>
+</div>
 <script>
 function badge(s){let c='warn';if(/running|authenticated/.test(s))c='ok';if(/stopped|failed|none/.test(s))c='bad';
  return '<span class="badge '+c+'">'+s+'</span>'}
@@ -651,13 +701,22 @@ async function loadLog(nocache){
  const r=await fetch('/api/log?_='+(nocache?Date.now():0));const t=await r.text();
  const el=document.getElementById('log');el.textContent=t;el.scrollTop=el.scrollHeight;}
 async function act(a){await fetch('/api/'+a,{method:'POST'});poll();}
+async function loadCfg(){const r=await fetch('/api/config');document.getElementById('cfg').value=await r.text();}
+async function saveCfg(){
+ if(!confirm('Save config and restart the server?'))return;
+ const r=await fetch('/api/config/save',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'content='+encodeURIComponent(document.getElementById('cfg').value)});
+ const t=await r.text(); if(t)alert(t); poll();}
+async function wipeWorld(){
+ if(!confirm('Delete ALL world data, saves and server config? This cannot be undone. Server restarts with defaults.'))return;
+ const r=await fetch('/api/server/reset-world',{method:'POST'});
+ const t=await r.text(); if(t)alert(t); loadCfg(); poll();}
 async function login(){
  const body='username='+encodeURIComponent(document.getElementById('user').value)+
  '&password='+encodeURIComponent(document.getElementById('pass').value)+
  '&guard='+encodeURIComponent(document.getElementById('guard').value);
  const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});
  const t=await r.text(); if(t)alert(t); poll();}
-setInterval(poll,3000);setInterval(loadLog,false,5000);poll();loadLog();
+setInterval(poll,3000);setInterval(loadLog,false,5000);poll();loadLog();loadCfg();
 </script></body></html>"""
 
 
@@ -704,6 +763,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, json.dumps(SUP.status()), "application/json")
         elif path == "/api/log":
             self._send(200, tail_log())
+        elif path == "/api/config":
+            self._send(200, SUP.get_config(), "application/xml")
         elif path == "/api/auth/qr.png":
             if os.path.exists(QR_PATH):
                 with open(QR_PATH, "rb") as f:
@@ -734,6 +795,13 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/server/stop":
             SUP.stop_server()
             return self._send(200, "")
+        if path == "/api/config/save":
+            form = self._read_form()
+            err = SUP.save_config(form.get("content", ""))
+            return self._send(200, err or "")
+        if path == "/api/server/reset-world":
+            err = SUP.reset_world()
+            return self._send(200, err or "")
         if path == "/api/server/restart":
             SUP.restart_server()
             return self._send(200, "")
