@@ -18,6 +18,8 @@ spec:
       labels:
         app: swserver
     spec:
+      imagePullSecrets:
+      - name: gitea-registry
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
@@ -26,7 +28,7 @@ spec:
       #   kubernetes.io/arch: amd64
       containers:
       - name: swserver
-        image: bensonjohnson/swserver:latest
+        image: gitea.gokickrocks.org/bensonjohnson/sw-server:latest
         imagePullPolicy: Always
         envFrom:
         - secretRef:

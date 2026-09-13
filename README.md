@@ -1,7 +1,8 @@
 # Stormworks Server in Docker
 
-https://hub.docker.com/r/bensonjohnson/swserver \
-https://github.com/bensonjohnson/swserver
+Container registry: `gitea.gokickrocks.org/bensonjohnson/sw-server` \
+https://gitea.gokickrocks.org/bensonjohnson/sw-server \
+(mirror: https://github.com/bensonjohnson/swserver)
 
 A Stormworks: Build and Rescue dedicated server (Windows `server64.exe` under
 Wine) with a built-in **web control panel** for Steam login (including QR
@@ -54,6 +55,9 @@ other than localhost/LAN.
 
 ```bash
 kubectl apply -f k8s/persistent-storage.yaml
+kubectl -n game-servers create secret docker-registry gitea-registry \
+  --docker-server=gitea.gokickrocks.org \
+  --docker-username=<gitea-user> --docker-password=<gitea-token-with-package-write>
 kubectl -n game-servers create secret generic steam-credentials \
   --from-literal=STEAM_USERNAME=<user> --from-literal=STEAM_GSLT=<token> \
   --from-literal=PANEL_PASSWORD=<panel-pass>
