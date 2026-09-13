@@ -565,18 +565,26 @@ class Supervisor:
         except OSError:
             return ""
 
-    def save_config(self, content):
+    def save_config(self, content, purge=False):
         if "<server_data" not in content:
             return "refusing to save: does not look like server_config.xml"
         with self.lock:
             was_running = bool(self.server)
         self.stop_server()
+        if purge:
+            # Stormworks loads existing world data over some config settings;
+            # wiping the saves dir forces a fresh world with the new config
+            try:
+                shutil.rmtree(SW_SETTINGS_DIR)
+                log("purged world data for config reload")
+            except OSError as e:
+                log("purge failed: %s" % e)
         os.makedirs(os.path.dirname(SERVER_CONFIG), exist_ok=True)
         tmp = SERVER_CONFIG + ".tmp"
         with open(tmp, "w") as f:
             f.write(content)
         os.replace(tmp, SERVER_CONFIG)
-        log("server_config.xml updated via panel")
+        log("server_config.xml updated via panel%s" % (" (world purged)" if purge else ""))
         self.start_server()
         return None
 
@@ -676,6 +684,7 @@ PAGE = """<!doctype html>
   <textarea id="cfg" style="width:100%;height:300px;background:#0e1114;color:#cde;border:1px solid #333;border-radius:6px;font-family:monospace;font-size:.75rem;padding:8px" spellcheck="false"></textarea><br>
   <button onclick="loadCfg()">Reload from server</button>
   <button onclick="saveCfg()">Save &amp; restart server</button>
+  <label style="font-size:.85rem"><input type="checkbox" id="purge" checked> purge world data on save</label>
   <button style="background:#8b2222" onclick="wipeWorld()">Wipe world &amp; config (regenerate)</button>
   <span class="muted">Wiping deletes saves + working_server + config; the server recreates defaults on next start.</span>
  </div>
@@ -703,8 +712,9 @@ async function loadLog(nocache){
 async function act(a){await fetch('/api/'+a,{method:'POST'});poll();}
 async function loadCfg(){const r=await fetch('/api/config');document.getElementById('cfg').value=await r.text();}
 async function saveCfg(){
- if(!confirm('Save config and restart the server?'))return;
- const r=await fetch('/api/config/save',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'content='+encodeURIComponent(document.getElementById('cfg').value)});
+ const purge=document.getElementById('purge').checked;
+ if(!confirm(purge?'Save config, PURGE world data and restart?':'Save config and restart the server?'))return;
+ const r=await fetch('/api/config/save',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'content='+encodeURIComponent(document.getElementById('cfg').value)+'&purge='+purge});
  const t=await r.text(); if(t)alert(t); poll();}
 async function wipeWorld(){
  if(!confirm('Delete ALL world data, saves and server config? This cannot be undone. Server restarts with defaults.'))return;
@@ -797,7 +807,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, "")
         if path == "/api/config/save":
             form = self._read_form()
-            err = SUP.save_config(form.get("content", ""))
+            purge = form.get("purge", "").lower() in ("1", "true", "on")
+            err = SUP.save_config(form.get("content", ""), purge=purge)
             return self._send(200, err or "")
         if path == "/api/server/reset-world":
             err = SUP.reset_world()
