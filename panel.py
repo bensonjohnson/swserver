@@ -60,7 +60,8 @@ PW_RE = re.compile(r"password:\s*$", re.I)
 GUARD_RE = re.compile(r"(enter the code|steam guard|authenticator|mobile app|code:)", re.I)
 QR_RE = re.compile(r"data for qr authentication", re.I)
 CONFIRM_RE = re.compile(r"waiting for confirmation", re.I)
-LOGGED_IN_RE = re.compile(r"(Logged in OK|Login Success|Waiting for user info\.\.\.OK)", re.I)
+LOGGED_IN_RE = re.compile(
+    r"(Logged in OK|Login Success|Waiting for user info\.\.\.OK|Logging in user.*OK)", re.I)
 FAIL_RE = re.compile(r"(ERROR \(|Login Failed|Login failure|Invalid Password|Too many login attempts)", re.I)
 
 
@@ -252,6 +253,20 @@ class SteamSession:
                     self.state = "failed"
                     self.message = "Login failed: %s (check username/password/guard code)" % fail_line
                     log("Steam login FAILED for %s: %s" % (self.username, fail_line))
+                    break
+
+                # steamcmd sometimes signals a completed login (esp. via cached
+                # token or mobile approval) simply by returning to the prompt
+                # with an OK and no error text
+                if sent_login and sent_guard and flat.rstrip().endswith("Steam>"):
+                    self.state = "authenticated"
+                    self.message = "Logged in to Steam."
+                    log("login completed (prompt returned without error)")
+                    try:
+                        os.write(self._fd, b"quit\n")
+                        time.sleep(1)
+                    except OSError:
+                        pass
                     break
             else:
                 if self.state not in ("authenticated", "failed"):
