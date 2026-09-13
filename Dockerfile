@@ -27,7 +27,7 @@ RUN cp -a /home/steam/steamcmd /opt/steamcmd-fallback && \
 
 USER steam
 ENV HOME=/home/steam \
-    WINEPREFIX=/home/steam/.wine \
+    WINEPREFIX=/home/steam/wine-data/prefix \
     PANEL_PORT=8080
 
 WORKDIR /home/steam

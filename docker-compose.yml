@@ -26,8 +26,10 @@ services:
       - swserver-steam:/home/steam/Steam
       # persistent SteamCMD client (avoids re-downloading the 40MB client update)
       - swserver-steamcmd:/home/steam/steamcmd
-      # wine prefix (server saves/world data live inside it)
-      - swserver-wine:/home/steam/.wine
+      # wine prefix (server saves/world data live inside it);
+      # wine insists the prefix dir itself is user-owned, so it lives in a
+      # subdirectory of the volume root (which ceph mounts root-owned)
+      - swserver-wine:/home/steam/wine-data
       # game install
       - swserver-gamedata:/home/steam/sw
 

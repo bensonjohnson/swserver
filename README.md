@@ -88,6 +88,6 @@ Reach the control panel at `http://<loadbalancer-ip>:8080`, log in once via QR, 
 
 - Game ports: 25564-25566 (TCP+UDP).
 - The dedicated server is Windows-only and runs under Wine + Xvfb; saves
-  live in the Wine prefix volume (`/home/steam/.wine`).
+  live in the Wine prefix volume (`/home/steam/wine-data/prefix`).
 - Requires an account that owns Stormworks - the server depots are not
   anonymous downloads.

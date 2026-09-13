@@ -76,7 +76,7 @@ spec:
           name: steam-login
         - mountPath: /home/steam/steamcmd
           name: steamcmd-client
-        - mountPath: /home/steam/.wine
+        - mountPath: /home/steam/wine-data
           name: wineprefix
         - mountPath: /home/steam/sw
           name: gamedata
