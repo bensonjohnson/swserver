@@ -4,6 +4,7 @@ metadata:
   name: swserver-steam-login-pvc
   namespace: game-servers
 spec:
+  storageClassName: ceph-rbd
   accessModes:
     - ReadWriteOnce
   resources:
@@ -16,6 +17,7 @@ metadata:
   name: swserver-steamcmd-pvc
   namespace: game-servers
 spec:
+  storageClassName: ceph-rbd
   accessModes:
     - ReadWriteOnce
   resources:
@@ -28,6 +30,7 @@ metadata:
   name: swserver-wine-pvc
   namespace: game-servers
 spec:
+  storageClassName: ceph-rbd
   accessModes:
     - ReadWriteOnce
   resources:
@@ -40,6 +43,7 @@ metadata:
   name: swserver-gamedata-pvc
   namespace: game-servers
 spec:
+  storageClassName: ceph-rbd
   accessModes:
     - ReadWriteOnce
   resources:

@@ -1,38 +1,41 @@
-name: Build and Push Docker Image
-run-name: ${{ gitea.actor }} is building swserver 🚀
+name: Build and Deploy Stormworks Server
+run-name: ${{ gitea.actor }} is building and deploying swserver ⚓
 
 on:
   push:
     branches: [main]
     tags: ["v*"]
+    paths:
+      - "Dockerfile"
+      - "panel.py"
+      - "entry.sh"
+      - "k8s/**"
+      - ".gitea/workflows/docker.yml"
   pull_request:
   schedule:
     - cron: "0 8 * * 1" # weekly rebuild keeps base image + apt packages fresh
   workflow_dispatch:
-    inputs:
-      push:
-        description: "Push image after building"
-        type: boolean
-        default: false
 
 env:
-  IMAGE: gitea.gokickrocks.org/${{ gitea.repository }}
+  # Runners expose Docker over TCP, not a unix socket.
+  DOCKER_HOST: tcp://localhost:2375
+  DOCKER_TLS_VERIFY: ""
+  REGISTRY: gitea.gokickrocks.org
+  IMAGE: gitea.gokickrocks.org/bensonjohnson/sw-server
+  NAMESPACE: game-servers
 
 jobs:
-  build:
-    runs-on: ubuntu-latest # native amd64 runner - no qemu needed
-    env:
-      DOCKER_HOST: tcp://localhost:2375
-      DOCKER_TLS_VERIFY: ""
+  build-deploy:
+    runs-on: ubuntu-latest # amd64 runner
     steps:
       - uses: actions/checkout@v4
 
       - uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Gitea registry
+      - name: Login to Gitea Container Registry
         uses: docker/login-action@v3
         with:
-          registry: gitea.gokickrocks.org
+          registry: ${{ env.REGISTRY }}
           username: ${{ gitea.actor }}
           password: ${{ secrets.PACKAGES_TOKEN }}
 
@@ -42,24 +45,51 @@ jobs:
         with:
           images: ${{ env.IMAGE }}
           tags: |
-            # git tag v1.2.3 -> 1.2.3, 1.2, 1, latest
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build and push
+      - name: Build and Push to Gitea
         uses: docker/build-push-action@v6
         with:
           context: .
+          # image (and the cm2network base) are linux/amd64 only - never let
+          # buildx pick a native arm64 variant when the runner lands on an
+          # arm64 node
           platforms: linux/amd64
-          # push on version tags, the weekly rebuild, or manual dispatch;
-          # plain branch/PR pushes are build-only validation
-          push: >-
-            ${{ (gitea.event_name == 'push' && startsWith(gitea.ref, 'refs/tags/v')) ||
-                gitea.event_name == 'schedule' ||
-                (gitea.event_name == 'workflow_dispatch' && gitea.event.inputs.push == 'true') }}
+          push: ${{ gitea.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Install kubectl
+        if: gitea.event_name != 'pull_request'
+        run: |
+          curl -sLO "https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl"
+          chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+
+      - name: Deploy (render manifests to the commit SHA and apply)
+        # kubectl apply on k8s/ keeps the repo as the source of truth (probes,
+        # resources, env all reach the cluster, not just the image tag).
+        # The manifests carry :latest as a placeholder; substituting the built
+        # SHA gives a deterministic pin and a clean rollback target.
+        if: gitea.event_name != 'pull_request'
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" > kubeconfig
+          export KUBECONFIG=kubeconfig
+          sed -i "s|sw-server:latest|sw-server:${{ gitea.sha }}|g" k8s/deployment.yaml
+          grep -q "sw-server:${{ gitea.sha }}" k8s/deployment.yaml \
+            || { echo "image placeholder substitution failed"; exit 1; }
+          kubectl apply -f k8s/
+          kubectl rollout status deployment/swserver-deployment -n ${{ env.NAMESPACE }} --timeout=600s
+
+      - name: Where to find it
+        if: gitea.event_name != 'pull_request'
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" > kubeconfig
+          export KUBECONFIG=kubeconfig
+          IP=$(kubectl -n ${{ env.NAMESPACE }} get svc swserver-loadbalancer \
+                 -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          echo "::notice::Stormworks server: game port ${IP}:25564, control panel http://${IP}:8080"

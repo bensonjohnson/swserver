@@ -20,6 +20,9 @@ spec:
     spec:
       imagePullSecrets:
       - name: gitea-registry
+      # image is linux/amd64 only - keep it on the amd64 pool
+      nodeSelector:
+        kubernetes.io/arch: amd64
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
@@ -29,7 +32,7 @@ spec:
       containers:
       - name: swserver
         image: gitea.gokickrocks.org/bensonjohnson/sw-server:latest
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         envFrom:
         - secretRef:
             name: steam-credentials

@@ -53,19 +53,26 @@ other than localhost/LAN.
 
 ## Kubernetes
 
+Pushes to `main` (Dockerfile/panel/entry.sh/k8s changes) are built and
+auto-deployed to the `game-servers` namespace by Gitea Actions, exposed via
+a LoadBalancer service (`k8s/service.yaml`).
+
+One-time setup (already done on the home cluster):
+
 ```bash
 kubectl apply -f k8s/persistent-storage.yaml
 kubectl -n game-servers create secret docker-registry gitea-registry \
   --docker-server=gitea.gokickrocks.org \
-  --docker-username=<gitea-user> --docker-password=<gitea-token-with-package-write>
+  --docker-username=<user> --docker-password=<gitea-token-package-write>
 kubectl -n game-servers create secret generic steam-credentials \
   --from-literal=STEAM_USERNAME=<user> --from-literal=STEAM_GSLT=<token> \
   --from-literal=PANEL_PASSWORD=<panel-pass>
+# plus the swserver-deployer ServiceAccount/Role whose scoped kubeconfig
+# lives in the repo's KUBECONFIG Actions secret
 kubectl apply -f k8s/deployment.yaml
-kubectl apply -f k8s/NodePort/   # or k8s/loadbalancer/
 ```
 
-Reach the NodePort panel at `http://<node>:32580`, log in once via QR, done.
+Reach the control panel at `http://<loadbalancer-ip>:8080`, log in once via QR, done.
 
 ## Environment variables
 
