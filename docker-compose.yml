@@ -1,0 +1,38 @@
+services:
+  swserver:
+    build:
+      context: .
+      platforms:
+        - linux/amd64
+    platform: linux/amd64
+    restart: unless-stopped
+    environment:
+      - STEAM_USERNAME=${STEAM_USERNAME}
+      - STEAM_GSLT=${STEAM_GSLT}
+      - PANEL_PORT=${PANEL_PORT:-8080}
+      # optional HTTP basic-auth password for the control panel (recommended if port is exposed)
+      - PANEL_PASSWORD=${PANEL_PASSWORD}
+      - AUTO_START=${AUTO_START:-true}
+    ports:
+      - "25564:25564/tcp"
+      - "25564:25564/udp"
+      - "25565:25565/tcp"
+      - "25565:25565/udp"
+      - "25566:25566/tcp"
+      - "25566:25566/udp"
+      - "8080:8080/tcp"   # control panel (set PANEL_PASSWORD before exposing broadly)
+    volumes:
+      # persistent Steam login tokens (do one login, never again)
+      - swserver-steam:/home/steam/Steam
+      # persistent SteamCMD client (avoids re-downloading the 40MB client update)
+      - swserver-steamcmd:/home/steam/steamcmd
+      # wine prefix (server saves/world data live inside it)
+      - swserver-wine:/home/steam/.wine
+      # game install
+      - swserver-gamedata:/home/steam/sw
+
+volumes:
+  swserver-steam:
+  swserver-steamcmd:
+  swserver-wine:
+  swserver-gamedata:

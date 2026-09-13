@@ -36,5 +36,10 @@ spec:
       port: 25566
       targetPort: 25566
       nodePort: 32569
+    - name: panel
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+      nodePort: 32580
   selector:
     app: swserver

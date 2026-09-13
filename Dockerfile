@@ -1,34 +1,33 @@
-FROM ubuntu:24.04
+## Stormworks dedicated server with built-in web control panel.
+## Base image ships a current, pre-updated SteamCMD (the old public tarball's
+## self-updating bootstrap fails on many networks) and runs as non-root "steam".
+FROM cm2network/steamcmd:latest
 
-##set up base
-WORKDIR /home/steam/sw
-RUN export DEBIAN_FRONTEND=noninteractive
-RUN apt update && apt upgrade -y
+USER root
+ENV DEBIAN_FRONTEND=noninteractive
+
+## wine (Debian repo build - enough for the 64-bit dedicated server),
+## Xvfb for headless wine, qrencode for the Steam QR login flow
 RUN apt-get update && \
-    apt-get install -yq tzdata && \
-    ln -fs /usr/share/zoneinfo/America/Boise /etc/localtime && \
-    dpkg-reconfigure -f noninteractive tzdata
-RUN apt install software-properties-common -y
-RUN dpkg --add-architecture i386
-RUN apt update && apt upgrade -y
+    apt-get install -y --no-install-recommends \
+        wine64 xvfb qrencode python3 && \
+    rm -rf /var/lib/apt/lists/*
 
-## install base dependencies for headless xorg
-RUN apt install -y lib32gcc-s1 curl wget xvfb apt-utils rsync nano
+RUN mkdir -p /home/steam/sw /home/steam/steamworks_sdk && \
+    chown -R steam:steam /home/steam/sw /home/steam/steamworks_sdk
 
-## add wine repo and install wine-staging
-RUN wget -nc -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key
-RUN wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/ubuntu/dists/noble/winehq-noble.sources
-RUN apt update && apt install --install-recommends wine64 -y
-
-COPY entry.sh /opt/
+COPY panel.py /opt/panel.py
+COPY entry.sh /opt/entry.sh
 RUN chmod +x /opt/entry.sh
 
-ENTRYPOINT /opt/entry.sh
-#ENTRYPOINT [ "bash" ]
+USER steam
+ENV HOME=/home/steam \
+    WINEPREFIX=/home/steam/.wine \
+    PANEL_PORT=8080
 
-EXPOSE 25564/tcp
-EXPOSE 25564/udp
-EXPOSE 25565/tcp
-EXPOSE 25565/udp
-EXPOSE 25566/tcp
-EXPOSE 25566/udp
+WORKDIR /home/steam
+
+## game ports + control panel
+EXPOSE 25564-25566/tcp 25564-25566/udp 8080/tcp
+
+ENTRYPOINT ["/opt/entry.sh"]

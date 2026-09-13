@@ -1,0 +1,57 @@
+# Environment variables
+.env
+
+# Docker volumes
+data/
+volumes/
+
+# Logs
+*.log
+logs/
+
+# Mac OS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# IDE files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Node.js
+node_modules/
+npm-debug.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Steam files
+*.acf
+
+# Wine prefix
+.wine/
+
+# Syncthing conflict artifacts
+*sync-conflict*
