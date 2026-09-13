@@ -53,9 +53,11 @@ spec:
           protocol: TCP
           name: panel
         readinessProbe:
+          # the panel is always served (game server starts later via UI/LB);
+          # probing 25564 here would deadlock: LB only routes to ready pods
           tcpSocket:
-            port: 25564
-          initialDelaySeconds: 60
+            port: 8080
+          initialDelaySeconds: 10
           periodSeconds: 30
         livenessProbe:
           # panel process being alive is enough; wine hangs are visible in the UI
