@@ -59,6 +59,7 @@ ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
 PW_RE = re.compile(r"password:\s*$", re.I)
 GUARD_RE = re.compile(r"(enter the code|steam guard|authenticator|mobile app|code:)", re.I)
 QR_RE = re.compile(r"data for qr authentication", re.I)
+CONFIRM_RE = re.compile(r"waiting for confirmation", re.I)
 LOGGED_IN_RE = re.compile(r"(Logged in OK|Login Success|Waiting for user info\.\.\.OK)", re.I)
 FAIL_RE = re.compile(r"(ERROR \(|Login Failed|Login failure|Invalid Password|Too many login attempts)", re.I)
 
@@ -142,6 +143,7 @@ class SteamSession:
         last_log_time = 0.0
         sent_password = False
         sent_guard = False
+        confirm_seen = False
         qr_text = ""
         collecting_qr = False
         deadline = time.time() + timeout
@@ -161,7 +163,8 @@ class SteamSession:
                 flat = buf[-4000:]
 
                 now = time.time()
-                if now - last_log_time > 5:
+                throttle = 5 if not sent_guard else 1
+                if now - last_log_time > throttle:
                     lines = [l.strip() for l in chunk.splitlines() if l.strip()]
                     newest = lines[-1] if lines else ""
                     if newest and newest != last_logged:
@@ -200,6 +203,13 @@ class SteamSession:
                     sent_guard = True
                     buf = ""
                     continue
+
+                if CONFIRM_RE.search(flat) and not confirm_seen:
+                    confirm_seen = True
+                    self.message = ("Check your Steam Mobile app for a sign-in "
+                                    "notification and tap Approve (or scan the QR "
+                                    "code above if one is shown).")
+                    log("steamcmd awaiting mobile confirmation; raw tail:\n" + flat[-800:])
 
                 if QR_RE.search(flat) and not self.qr_ready:
                     collecting_qr = True
