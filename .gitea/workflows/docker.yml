@@ -22,7 +22,7 @@ jobs:
   build:
     runs-on: ubuntu-latest # native amd64 runner - no qemu needed
     env:
-      DOCKER_HOST: tcp://docker:2375
+      DOCKER_HOST: tcp://localhost:2375
       DOCKER_TLS_VERIFY: ""
     steps:
       - uses: actions/checkout@v4
