@@ -76,6 +76,17 @@ def log(msg):
         pass
 
 
+def find_wine_bin():
+    for cand in ("wine", "wine64"):
+        p = shutil.which(cand)
+        if p:
+            return p
+    for cand in ("/usr/lib/wine/wine64", "/usr/bin/wine64"):
+        if os.path.exists(cand):
+            return cand
+    return "wine"
+
+
 def tail_log(nbytes=16384, lines=60):
     try:
         with open(LOG_PATH, "rb") as f:
@@ -426,6 +437,13 @@ class Supervisor:
     def ensure_install(self):
         with self.cmd_lock:
             self.busy = "downloading game files"
+            try:
+                return self._ensure_install()
+            finally:
+                self.busy = ""
+
+    def _ensure_install(self):
+        if True:
             log("installing/updating Stormworks (app %d)" % GAME_APP_ID)
             ok1, _ = run_steamcmd_script(
                 self._login_cmds() +
@@ -448,7 +466,6 @@ class Supervisor:
                     self.start_server()
             else:
                 log("install/update FAILED:\n" + out[-1500:])
-            self.busy = ""
             return ok2
 
     def update_now(self):
@@ -480,14 +497,17 @@ class Supervisor:
             if not exe:
                 return "server not installed yet"
         os.makedirs(WINEPREFIX, exist_ok=True)
-        subprocess.run(["wineboot", "--init"], stdout=subprocess.DEVNULL,
-                       stderr=subprocess.DEVNULL, env=self._wine_env())
+        try:
+            subprocess.run(["wineboot", "--init"], stdout=subprocess.DEVNULL,
+                           stderr=subprocess.DEVNULL, env=self._wine_env())
+        except FileNotFoundError:
+            pass  # wine64-only images have no wineboot wrapper; wine creates the prefix itself
         if not self.xvfb:
             self.xvfb = subprocess.Popen(
                 ["Xvfb", ":99", "-screen", "0", "1024x768x16"],
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             time.sleep(1)
-        args = ["wine", exe]
+        args = [find_wine_bin(), exe]
         gslt = os.environ.get("STEAM_GSLT", "")
         if gslt:
             os.makedirs(os.path.join(SW_DIR, "config"), exist_ok=True)
