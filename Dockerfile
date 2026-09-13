@@ -20,6 +20,11 @@ COPY panel.py /opt/panel.py
 COPY entry.sh /opt/entry.sh
 RUN chmod +x /opt/entry.sh
 
+## k8s PVCs mount empty over /home/steam/steamcmd (unlike docker named
+## volumes, which seed from the image) - keep a fallback copy to re-seed from
+RUN cp -a /home/steam/steamcmd /opt/steamcmd-fallback && \
+    chown -R steam:steam /opt/steamcmd-fallback
+
 USER steam
 ENV HOME=/home/steam \
     WINEPREFIX=/home/steam/.wine \

@@ -707,14 +707,17 @@ def main():
     server = ThreadingHTTPServer(("0.0.0.0", PANEL_PORT), Handler)
 
     def boot():
-        if SUP.try_cached_login():
-            if not SUP.installed():
-                threading.Thread(target=SUP.ensure_install, daemon=True).start()
-            elif not SUP.server and os.environ.get("AUTO_START", "true").lower() != "false":
-                SUP.start_server()
-        else:
-            SUP.auth_state = "none"
-            SUP.auth_message = "Not logged in - open the panel, enter Steam credentials (leave guard code blank for QR login)."
+        try:
+            if SUP.try_cached_login():
+                if not SUP.installed():
+                    threading.Thread(target=SUP.ensure_install, daemon=True).start()
+                elif not SUP.server and os.environ.get("AUTO_START", "true").lower() != "false":
+                    SUP.start_server()
+            else:
+                SUP.auth_state = "none"
+                SUP.auth_message = "Not logged in - open the panel, enter Steam credentials (leave guard code blank for QR login)."
+        except Exception as e:
+            log("boot sequence failed: %r" % e)
     threading.Thread(target=boot, daemon=True).start()
 
     def shutdown(sig, frm):
